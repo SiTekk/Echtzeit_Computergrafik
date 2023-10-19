@@ -1,3 +1,5 @@
+import { deltaTime } from "./globalVariables.js";
+
 function toRadians(degree) {
     return degree * Math.PI / 180;
 }
@@ -6,40 +8,44 @@ let temp = glMatrix.vec3.create();
 
 function keyboardInput(event, cameraValues) {
 
+    const scale = 0.1 * deltaTime;
+
+    console.log("deltaTime:", deltaTime);
+
     if (event.keyCode == 87) { // W
         glMatrix.vec3.copy(temp, cameraValues.center);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.add(cameraValues.eye, cameraValues.eye, temp);
     }
     if (event.keyCode == 65) { // A
         glMatrix.vec3.cross(temp, cameraValues.center, cameraValues.up);
         glMatrix.vec3.normalize(temp, temp);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.subtract(cameraValues.eye, cameraValues.eye, temp);
     }
     if (event.keyCode == 83) { // S
         glMatrix.vec3.copy(temp, cameraValues.center);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.subtract(cameraValues.eye, cameraValues.eye, temp);
     }
     if (event.keyCode == 68) { // D
         glMatrix.vec3.cross(temp, cameraValues.center, cameraValues.up);
         glMatrix.vec3.normalize(temp, temp);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.add(cameraValues.eye, cameraValues.eye, temp);
     }
     if (event.keyCode == 32) { // Space
         glMatrix.vec3.cross(temp, cameraValues.center, cameraValues.up);
         glMatrix.vec3.cross(temp, cameraValues.center, temp);
         glMatrix.vec3.normalize(temp, temp);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.subtract(cameraValues.eye, cameraValues.eye, temp);
     }
     if (event.keyCode == 17) { // Left Control
         glMatrix.vec3.cross(temp, cameraValues.center, cameraValues.up);
         glMatrix.vec3.cross(temp, cameraValues.center, temp);
         glMatrix.vec3.normalize(temp, temp);
-        glMatrix.vec3.scale(temp, temp, 0.1);
+        glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.add(cameraValues.eye, cameraValues.eye, temp);
     }
 }
