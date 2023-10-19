@@ -25,8 +25,6 @@ function main() {
         // Set clear color to black, fully opaque
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clearDepth(1.0); // Clear everything
-        gl.enable(gl.DEPTH_TEST); // Enable depth testing
-        gl.depthFunc(gl.LEQUAL); // Near things obscure far things
         // Clear the color buffer with specified clear color
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -67,6 +65,12 @@ function initialize() {
         );
         return null;
     }
+
+    gl.enable(gl.DEPTH_TEST); // Enable depth testing
+    gl.depthFunc(gl.LEQUAL); // Near things obscure far things
+
+    gl.enable(gl.CULL_FACE); // Enable face culling
+    gl.cullFace(gl.BACK);
 
     // Object that holds important handles
     const programData = {
