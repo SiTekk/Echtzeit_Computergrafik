@@ -1,4 +1,4 @@
-export const vertices =
+export const g_vertices =
     [
         -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
         0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
@@ -11,7 +11,7 @@ export const vertices =
         -0.5, 0.5, -1.0, 0.0, 1.0, 0.0
     ];
 
-export const indices =
+export const g_indices =
     [
         0, 2, 1, 0, 3, 2,
         0, 7, 3, 0, 4, 7,
@@ -21,14 +21,14 @@ export const indices =
         4, 6, 7, 4, 5, 6
     ];
 
-export let ubo = {
+export let g_ubo = {
     model: glMatrix.mat4.create(),
     view: glMatrix.mat4.create(),
     proj: glMatrix.mat4.create()
 };
 
 // Variable that holds the values for the camera
-export let cameraValues = {
+export let g_cameraValues = {
     angle: 0.0,
     axis: glMatrix.vec3.fromValues(0.0, 0.5, 1.5),
     eye: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
@@ -38,3 +38,8 @@ export let cameraValues = {
     near: 0.1,
     far: 1000.0
 };
+
+let deltaTime = 'initial value';
+
+export const getDeltaTime = () => deltaTime;
+export const setDeltaTime = (val) => (deltaTime = val);
