@@ -31,8 +31,8 @@ function main() {
         gl.useProgram(programData.shaderProgram);
         gl.bindVertexArray(programData.vertexArray);
 
-        glMatrix.mat4.identity(g_ubo.model);
-        glMatrix.mat4.translate(g_ubo.model, g_ubo.model, g_cameraValues.axis);
+        // glMatrix.mat4.identity(g_ubo.model);
+        // glMatrix.mat4.translate(g_ubo.model, g_ubo.model, g_cameraValues.axis);
 
         glMatrix.vec3.add(temp, g_cameraValues.center, g_cameraValues.eye);
         glMatrix.mat4.lookAt(g_ubo.view, g_cameraValues.eye, temp, g_cameraValues.up);
@@ -70,7 +70,7 @@ function initialize() {
     gl.depthFunc(gl.LEQUAL); // Near things obscure far things
 
     gl.enable(gl.CULL_FACE); // Enable face culling
-    gl.cullFace(gl.BACK);
+    gl.cullFace(gl.FRONT);
 
     // Object that holds important handles
     const programData = {

@@ -1,14 +1,14 @@
 export const g_vertices =
     [
-        -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
-        0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
-        0.5, 0.5, 0.0, 1.0, 0.0, 0.0,
-        -0.5, 0.5, 0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+        1.0, 1.0, 0.0, 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 1.0, 0.0, 0.0,
 
-        -0.5, -0.5, 1.0, .0, 1.0, 0.0,
-        0.5, -0.5, 1.0, 0.0, 1.0, 0.0,
-        0.5, 0.5, 1.0, 0.0, 1.0, 0.0,
-        -0.5, 0.5, 1.0, 0.0, 1.0, 0.0
+        0.0, 0.0, -1.0, 0.0, 1.0, 0.0,
+        1.0, 0.0, -1.0, 0.0, 1.0, 0.0,
+        1.0, 1.0, -1.0, 0.0, 1.0, 0.0,
+        0.0, 1.0, -1.0, 0.0, 1.0, 0.0
     ];
 
 export const g_indices =
@@ -30,11 +30,11 @@ export let g_ubo = {
 // Variable that holds the values for the camera
 export let g_cameraValues = {
     angle: 0.0,
-    axis: glMatrix.vec3.fromValues(0.0, 0.0, 1.5),
-    eye: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
-    center: glMatrix.vec3.fromValues(0.0, 0.0, 1.0),
+    axis: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
+    eye: glMatrix.vec3.fromValues(0.0, 0.0, 2.0),
+    center: glMatrix.vec3.fromValues(0.0, 0.0, -1.0),
     up: glMatrix.vec3.fromValues(0.0, 1.0, 0.0),
-    fovy: 90.0,
+    fovy: 60.0,
     near: 0.1,
     far: 1000.0
 };
