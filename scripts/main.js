@@ -45,6 +45,9 @@ function main() {
         gl.uniformMatrix4fv(viewLocation, gl.FALSE, g_ubo.view);
         gl.uniformMatrix4fv(projLocation, gl.FALSE, g_ubo.proj);
 
+        const timeUniform = gl.getUniformLocation(programData.shaderProgram, "u_time");
+        gl.uniform1f(timeUniform, timeStamp / 1000);
+
         for (let i = 0; i < cubePositions.length; i++)
         {
             glMatrix.mat4.identity(g_ubo.model);
@@ -61,6 +64,10 @@ function main() {
 
 function initialize() {
     const canvas = document.querySelector("#glcanvas");
+
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+
     // Initialize the GL context
     const gl = canvas.getContext("webgl2");
 
