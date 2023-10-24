@@ -16,7 +16,7 @@ void main()
 `;
 
 const fsSource = `#version 300 es
-precision highp float;
+precision mediump float;
 
 in vec3 outColor;
 

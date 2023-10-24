@@ -1,6 +1,6 @@
 import { createShaderProgram } from "./shaders.js";
 import { keyboardInput, mouseInput, toRadians } from "./input.js";
-import { g_cameraValues, g_indices, g_ubo, g_vertices, getDeltaTime, setDeltaTime } from "./globalVariables.js";
+import { cubePositions, g_cameraValues, g_indices, g_ubo, g_vertices, setDeltaTime } from "./globalVariables.js";
 
 main();
 
@@ -33,7 +33,8 @@ function main() {
 
         // glMatrix.mat4.identity(g_ubo.model);
         // glMatrix.mat4.translate(g_ubo.model, g_ubo.model, g_cameraValues.axis);
-
+        
+        glMatrix.mat4.identity(g_ubo.model);
         glMatrix.vec3.add(temp, g_cameraValues.center, g_cameraValues.eye);
         glMatrix.mat4.lookAt(g_ubo.view, g_cameraValues.eye, temp, g_cameraValues.up);
         glMatrix.mat4.perspective(g_ubo.proj, toRadians(g_cameraValues.fovy), programData.width / programData.height, g_cameraValues.near, g_cameraValues.far);
@@ -41,11 +42,16 @@ function main() {
         let modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
         let viewLocation = gl.getUniformLocation(programData.shaderProgram, "view");
         let projLocation = gl.getUniformLocation(programData.shaderProgram, "proj");
-        gl.uniformMatrix4fv(modelLocation, gl.FALSE, g_ubo.model);
         gl.uniformMatrix4fv(viewLocation, gl.FALSE, g_ubo.view);
         gl.uniformMatrix4fv(projLocation, gl.FALSE, g_ubo.proj);
 
-        gl.drawElements(gl.TRIANGLES, g_indices.length, gl.UNSIGNED_INT, 0);
+        for (let i = 0; i < cubePositions.length; i++)
+        {
+            glMatrix.mat4.identity(g_ubo.model);
+            glMatrix.mat4.translate(g_ubo.model, g_ubo.model, cubePositions[i]);
+            gl.uniformMatrix4fv(modelLocation, gl.FALSE, g_ubo.model);
+            gl.drawElements(gl.TRIANGLES, g_indices.length, gl.UNSIGNED_INT, 0);
+          }
 
         requestAnimationFrame(mainLoop);
     }
