@@ -1,4 +1,4 @@
-import { getDeltaTime } from "./globalVariables.js";
+import { global } from "./globalVariables.js";
 
 function toRadians(degree) {
     return degree * Math.PI / 180;
@@ -8,7 +8,7 @@ let temp = glMatrix.vec3.create();
 
 function keyboardInput(event, cameraValues) {
 
-    const scale = 0.01 * getDeltaTime();
+    const scale = 0.01 * global.deltaTime;
 
     //console.log("deltaTime:", getDeltaTime());
 
