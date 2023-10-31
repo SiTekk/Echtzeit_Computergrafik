@@ -1,57 +1,10 @@
-const vsSource = `#version 300 es
-layout (location = 0) in vec3 aVertexPosition;
-layout (location = 1) in vec3 aColor;
+async function createShaderProgram(gl) {
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
-
-out vec3 outColor;
-out mat4 pos;
-
-void main()
-{
-    gl_Position = proj * view * model * vec4(aVertexPosition.x, aVertexPosition.y, aVertexPosition.z, 1.0f);
-    outColor = aColor;
-    pos = model;
-}
-`;
-
-const fsSource = `#version 300 es
-precision mediump float;
-
-uniform float u_time;
-
-in vec3 outColor;
-in mat4 pos;
-
-out vec4 fragColor;
-
-float random (in vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233)))* 43758.5453123);
-}
-
-void main()
-{
-    vec2 i = gl_FragCoord.xy;
-
-    vec4 vecRand;
-
-    vecRand.x = random(i);
-    vecRand.y = random(i + vec2(1.0, 0.0));
-    vecRand.z = random(i + vec2(0.0, 1.0));
-    vecRand.w = random(i + vec2(1.0, 1.0));
-
-    vec4 color = vec4(sin(outColor.x + u_time + pos[3][0]), cos(outColor.y + u_time + pos[3][1]), sin(outColor.z + u_time + pos[3][2]), 1.0f);
-
-    fragColor = mix(color, vecRand, 0.5f);
-}
-`;
-
-function createShaderProgram(gl) {
-
-    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    let shaderSource;
+    shaderSource = await loadFile(`${document.location.origin}/shaders/shader.vert`);
+    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, shaderSource);
+    shaderSource = await loadFile(`${document.location.origin}/shaders/shader.frag`);
+    const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, shaderSource);
 
     const shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vertexShader);
@@ -98,6 +51,15 @@ function loadShader(gl, type, source) {
     }
 
     return shader;
+}
+
+async function loadFile(url) {
+    try {
+      const response = await fetch(url);
+      return await response.text();
+    } catch (err) {
+      console.error(err);
+    }
 }
 
 export { createShaderProgram };

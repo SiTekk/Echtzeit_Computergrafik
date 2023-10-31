@@ -4,8 +4,8 @@ import { cubePositions, g_cameraValues, g_indices, g_ubo, g_vertices, setDeltaTi
 
 main();
 
-function main() {
-    const [gl, programData] = initialize();
+async function main() {
+    const [gl, programData] = await initialize();
 
     initializeEventListener();
 
@@ -62,7 +62,7 @@ function main() {
     requestAnimationFrame(mainLoop);
 }
 
-function initialize() {
+async function initialize() {
     const canvas = document.querySelector("#glcanvas");
 
     canvas.height = window.innerHeight;
@@ -89,7 +89,7 @@ function initialize() {
     const programData = {
         width: document.querySelector("#glcanvas").width,
         height: document.querySelector("#glcanvas").height,
-        shaderProgram: createShaderProgram(gl),
+        shaderProgram: await createShaderProgram(gl),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
         indexBuffer: gl.createBuffer()
