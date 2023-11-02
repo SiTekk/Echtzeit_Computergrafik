@@ -1,6 +1,7 @@
 import { createShaderProgram } from "./shaders.js";
 import { keyboardInput, mouseInput, toRadians } from "./input.js";
 import { global } from "./globalVariables.js";
+import { createTexture } from "./textures.js";
 
 main();
 
@@ -29,6 +30,7 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.useProgram(programData.shaderProgram);
+        gl.bindTexture(GL_TEXTURE_2D, texture);
         gl.bindVertexArray(programData.vertexArray);
 
         // glMatrix.mat4.identity(global.ubo.model);
@@ -92,7 +94,8 @@ async function initialize() {
         shaderProgram: await createShaderProgram(gl),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
-        indexBuffer: gl.createBuffer()
+        indexBuffer: gl.createBuffer(),
+        texture: createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`)
     };
 
     console.log(`Width: ${programData.width}`)
@@ -108,10 +111,12 @@ async function initialize() {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, programData.indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(global.indices), gl.STATIC_DRAW);
 
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0); // Position
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 32, 0); // Position
     gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12); // Color
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, gl.FALSE, 32, 12); // Color
     gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(2, 2, gl.FLOAT, gl.FALSE, 32, 24); // Texel
+    gl.enableVertexAttribArray(2); 
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindVertexArray(null);
