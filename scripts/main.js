@@ -30,7 +30,7 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.useProgram(programData.shaderProgram);
-        gl.bindTexture(GL_TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, programData.texture);
         gl.bindVertexArray(programData.vertexArray);
 
         // glMatrix.mat4.identity(global.ubo.model);
@@ -56,7 +56,7 @@ async function main() {
             glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cubePositions[i]);
             gl.uniformMatrix4fv(modelLocation, gl.FALSE, global.ubo.model);
             gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
-          }
+        }
 
         requestAnimationFrame(mainLoop);
     }
@@ -95,7 +95,7 @@ async function initialize() {
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
         indexBuffer: gl.createBuffer(),
-        texture: createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`)
+        texture: await createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`)
     };
 
     console.log(`Width: ${programData.width}`)
