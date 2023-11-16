@@ -21,6 +21,17 @@ export const global =
             3, 6, 2, 3, 7, 6,
             4, 6, 7, 4, 5, 6
         ],
+    unitBoxVertices:
+        [
+            -1.0, -1.0, -1.0, // 0
+            +1.0, -1.0, -1.0, // 1
+            +1.0, +1.0, -1.0, // 2
+            -1.0, +1.0, -1.0, // 3
+            -1.0, -1.0, +1.0, // 4
+            +1.0, -1.0, +1.0, // 5
+            +1.0, +1.0, +1.0, // 6
+            -1.0, +1.0, +1.0, // 7
+        ],
     cubePositions: // The positions of the different cubes
         [
             [0.0, 0.0, 0.0],
@@ -51,5 +62,14 @@ export const global =
             near: 0.1,
             far: 1000.0
         },
-    deltaTime: 0 //Variable that stores the elapsed time of two frames
+    deltaTime: 0, //Variable that stores the elapsed time of two frames
+    skyBoxUrls: // Holds the URLs to the Skybox cube map elements
+    [
+        "textures/skybox/miramar_bk.jpg",
+        "textures/skybox/miramar_dn.jpg",
+        "textures/skybox/miramar_ft.jpg",
+        "textures/skybox/miramar_lf.jpg",
+        "textures/skybox/miramar_rt.jpg",
+        "textures/skybox/miramar_up.jpg"
+    ]
 };
