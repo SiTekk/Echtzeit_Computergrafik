@@ -74,11 +74,11 @@ export const global =
     deltaTime: 0, //Variable that stores the elapsed time of two frames
     skyBoxUrls: // Holds the URLs to the Skybox cube map elements
     [
-        "textures/skybox/miramar_rt.jpg",
-        "textures/skybox/miramar_lf.jpg",
-        "textures/skybox/miramar_up.jpg",
-        "textures/skybox/miramar_dn.jpg",
-        "textures/skybox/miramar_ft.jpg",
-        "textures/skybox/miramar_bk.jpg"
+        "textures/skybox/right.jpg",
+        "textures/skybox/left.jpg",
+        "textures/skybox/top.jpg",
+        "textures/skybox/bottom.jpg",
+        "textures/skybox/front.jpg",
+        "textures/skybox/back.jpg"
     ]
 };
