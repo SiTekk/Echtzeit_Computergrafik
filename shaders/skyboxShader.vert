@@ -1,4 +1,5 @@
 #version 300 es
+// precision highp float;
 
 layout (location = 0) in vec3 aPos;
 
@@ -11,5 +12,6 @@ void main()
 {
     f_texCoord = aPos;
     mat4 temp = mat4(mat3(view));
-    gl_Position = proj * temp * vec4(aPos, 1.0);
+    vec4 pos = proj * temp * vec4(aPos, 1.0);
+    gl_Position = pos.xyww;
 }

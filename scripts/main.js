@@ -48,25 +48,6 @@ async function main() {
         // Clear the color buffer with specified clear color
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        // Draw cubeMap first
-        gl.disable(gl.CULL_FACE)
-        gl.depthMask(gl.FALSE);
-
-        gl.useProgram(programData.skyboxShaderProgram);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
-        gl.bindVertexArray(programData.skyBoxVAO);
-
-        gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
-        gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
-
-        gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
-        //gl.drawArrays(gl.TRIANGLES, 0, 36);
-
-        gl.enable(gl.CULL_FACE)
-        gl.depthMask(gl.TRUE);
-
-        gl.clear(gl.DEPTH_BUFFER_BIT);
-
         gl.useProgram(programData.shaderProgram);
         gl.bindTexture(gl.TEXTURE_2D, programData.texture);
         gl.bindVertexArray(programData.vertexArray);
@@ -84,6 +65,21 @@ async function main() {
             gl.uniformMatrix4fv(modelLocation, gl.FALSE, global.ubo.model);
             gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
         }
+
+         // Draw cubeMap last
+         gl.disable(gl.CULL_FACE)
+
+         gl.useProgram(programData.skyboxShaderProgram);
+         gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
+         gl.bindVertexArray(programData.skyBoxVAO);
+ 
+         gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
+         gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
+ 
+         gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
+         //gl.drawArrays(gl.TRIANGLES, 0, 36);
+ 
+         gl.enable(gl.CULL_FACE)
 
         requestAnimationFrame(mainLoop);
     }
