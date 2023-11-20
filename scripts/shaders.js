@@ -1,9 +1,9 @@
-async function createShaderProgram(gl) {
+async function createShaderProgram(gl, vertexShaderUrl, fragmentShaderUrl) {
 
     let shaderSource;
-    shaderSource = await loadFile(`${document.location.origin}/shaders/shader.vert`);
+    shaderSource = await loadFile(vertexShaderUrl);
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, shaderSource);
-    shaderSource = await loadFile(`${document.location.origin}/shaders/shader.frag`);
+    shaderSource = await loadFile(fragmentShaderUrl);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, shaderSource);
 
     const shaderProgram = gl.createProgram();

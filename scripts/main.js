@@ -1,7 +1,7 @@
 import { createShaderProgram } from "./shaders.js";
 import { keyboardInput, mouseInput, toRadians } from "./input.js";
 import { global } from "./globalVariables.js";
-import { createTexture } from "./textures.js";
+import { createCubeMapTexture, createTexture } from "./textures.js";
 
 main();
 
@@ -18,10 +18,29 @@ async function main() {
     let elapsed = 0;
     let temp = glMatrix.vec3.create();
 
+    let modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
+    let viewLocation = gl.getUniformLocation(programData.shaderProgram, "view");
+    let projLocation = gl.getUniformLocation(programData.shaderProgram, "proj");
+
+    let skyboxViewLocation = gl.getUniformLocation(programData.skyboxShaderProgram, "view");
+    let skyboxProjLocation = gl.getUniformLocation(programData.skyboxShaderProgram, "proj");
+
+    gl.activeTexture(gl.TEXTURE0 + 0);
+    gl.bindTexture(gl.TEXTURE_2D, programData.texture);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
+
     function mainLoop(timeStamp) {
         global.deltaTime = timeStamp - start;
         start = timeStamp;
         //elapsed += g_deltaTime;
+
+        // glMatrix.mat4.identity(global.ubo.model);
+        // glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cameraValues.axis);
+        
+        glMatrix.mat4.identity(global.ubo.model);
+        glMatrix.vec3.add(temp, global.cameraValues.center, global.cameraValues.eye);
+        glMatrix.mat4.lookAt(global.ubo.view, global.cameraValues.eye, temp, global.cameraValues.up);
+        glMatrix.mat4.perspective(global.ubo.proj, toRadians(global.cameraValues.fovy), programData.width / programData.height, global.cameraValues.near, global.cameraValues.far);
 
         // Set clear color to black, fully opaque
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -33,17 +52,6 @@ async function main() {
         gl.bindTexture(gl.TEXTURE_2D, programData.texture);
         gl.bindVertexArray(programData.vertexArray);
 
-        // glMatrix.mat4.identity(global.ubo.model);
-        // glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cameraValues.axis);
-        
-        glMatrix.mat4.identity(global.ubo.model);
-        glMatrix.vec3.add(temp, global.cameraValues.center, global.cameraValues.eye);
-        glMatrix.mat4.lookAt(global.ubo.view, global.cameraValues.eye, temp, global.cameraValues.up);
-        glMatrix.mat4.perspective(global.ubo.proj, toRadians(global.cameraValues.fovy), programData.width / programData.height, global.cameraValues.near, global.cameraValues.far);
-
-        let modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
-        let viewLocation = gl.getUniformLocation(programData.shaderProgram, "view");
-        let projLocation = gl.getUniformLocation(programData.shaderProgram, "proj");
         gl.uniformMatrix4fv(viewLocation, gl.FALSE, global.ubo.view);
         gl.uniformMatrix4fv(projLocation, gl.FALSE, global.ubo.proj);
 
@@ -57,6 +65,21 @@ async function main() {
             gl.uniformMatrix4fv(modelLocation, gl.FALSE, global.ubo.model);
             gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
         }
+
+         // Draw cubeMap last
+         gl.disable(gl.CULL_FACE)
+
+         gl.useProgram(programData.skyboxShaderProgram);
+         gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
+         gl.bindVertexArray(programData.skyBoxVAO);
+ 
+         gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
+         gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
+ 
+         gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
+         //gl.drawArrays(gl.TRIANGLES, 0, 36);
+ 
+         gl.enable(gl.CULL_FACE)
 
         requestAnimationFrame(mainLoop);
     }
@@ -91,11 +114,16 @@ async function initialize() {
     const programData = {
         width: document.querySelector("#glcanvas").width,
         height: document.querySelector("#glcanvas").height,
-        shaderProgram: await createShaderProgram(gl),
+        shaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/shader.vert`, `${document.location.origin}/shaders/shader.frag`),
+        skyboxShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/skyboxShader.vert`, `${document.location.origin}/shaders/skyboxShader.frag`),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
         indexBuffer: gl.createBuffer(),
-        texture: await createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`)
+        skyBoxVAO: gl.createVertexArray(),
+        skyBoxVBO: gl.createBuffer(),
+        skyBoxIBO: gl.createBuffer(),
+        texture: await createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`),
+        cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls)
     };
 
     console.log(`Width: ${programData.width}`)
@@ -117,6 +145,20 @@ async function initialize() {
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(2, 2, gl.FLOAT, gl.FALSE, 32, 24); // Texel
     gl.enableVertexAttribArray(2); 
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindVertexArray(null);
+
+    gl.bindVertexArray(programData.skyBoxVAO);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, programData.skyBoxVBO);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(global.unitBoxVertices), gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, programData.skyBoxIBO);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(global.unitBoxIndices), gl.STATIC_DRAW);
+
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 12, 0); // Position
+    gl.enableVertexAttribArray(0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindVertexArray(null);
