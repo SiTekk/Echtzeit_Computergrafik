@@ -1,8 +1,9 @@
 export class AttributeDescription { // Class which contains the attribute desciptions for the shaders
-    constructor(location, size, offset) {
+    constructor(location, size, offset, isInstanced = false) {
         this.location = location;
         this.size = size;
         this.offset = offset;
+        this.isInstanced = isInstanced;
     }
 }
 
@@ -55,6 +56,7 @@ export const global =
         new AttributeDescription(1, 3, 12), // Normals
         new AttributeDescription(2, 3, 24), // Color
         new AttributeDescription(3, 3, 36), // Texel
+        //new AttributeDescription(4, 3, 0, true), // Instances
     ],
     unitBoxVertices:
     [
@@ -91,7 +93,7 @@ export const global =
     ],
     lightPosition:
     [
-        10, 0, 10
+        0, 10, 0
     ],
     ubo: // Holds the matrices for the translations
     {
@@ -103,7 +105,7 @@ export const global =
     {
         angle: 0.0,
         axis: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
-        eye: glMatrix.vec3.fromValues(0.0, 0.0, 2.0),
+        eye: glMatrix.vec3.fromValues(0.0, 10.0, 2.0),
         center: glMatrix.vec3.fromValues(0.0, 0.0, -1.0),
         up: glMatrix.vec3.fromValues(0.0, 1.0, 0.0),
         fovy: 60.0,
