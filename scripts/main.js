@@ -18,7 +18,7 @@ async function main() {
     let elapsed = 0;
     let temp = glMatrix.vec3.create();
 
-    const modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
+    //const modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
     const viewLocation = gl.getUniformLocation(programData.shaderProgram, "view");
     const projLocation = gl.getUniformLocation(programData.shaderProgram, "proj");
 
@@ -37,7 +37,7 @@ async function main() {
     function mainLoop(timeStamp) {
         global.deltaTime = timeStamp - start;
         start = timeStamp;
-        //elapsed += g_deltaTime;
+        //elapsed += global.deltaTime;
 
         // glMatrix.mat4.identity(global.ubo.model);
         // glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cameraValues.axis);
@@ -66,12 +66,7 @@ async function main() {
         gl.uniform3fv(viewPosLocation, global.cameraValues.eye);
 
         // Draw Cubes
-        for (let i = 0; i < global.cubePositions.length; i++)
-        {
-            glMatrix.mat4.fromTranslation(global.ubo.model, global.cubePositions[i]);
-            gl.uniformMatrix4fv(modelLocation, gl.FALSE, global.ubo.model);
-            gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
-        }
+        gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, programData.instances.length);
 
         // Draw light source
         gl.useProgram(programData.lightShaderProgram);
@@ -81,6 +76,10 @@ async function main() {
         gl.uniformMatrix4fv(lightProjLocation, gl.FALSE, global.ubo.proj);
 
         glMatrix.mat4.identity(global.ubo.model);
+
+        global.lightPosition[0] = global.lightPosition[0] + Math.sin(toRadians(timeStamp * 0.02)) * 0.03;
+        global.lightPosition[2] = global.lightPosition[2] + Math.cos(toRadians(timeStamp * 0.02)) * 0.03;
+
         glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.lightPosition);
         glMatrix.mat4.scale(global.ubo.model, global.ubo.model, [0.2, 0.2, 0.2]);
         gl.uniformMatrix4fv(lightModelLocation, gl.FALSE, global.ubo.model);
@@ -146,15 +145,26 @@ async function initialize() {
         texture: await createCubeMapTexture(gl, global.dirtBlockUrls),
         cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls),
         lightVAO: gl.createVertexArray(),
+        instances: []
     };
 
     console.log(`Width: ${programData.width}`)
     console.log(`Height: ${programData.height}`)
     console.log(`Aspect: ${programData.width / programData.height}`)
-    
-    setupVertexArray(gl, programData.vertexArray, programData.vertexBuffer, global.vertices, programData.indexBuffer, global.indices, global.attributeDescriptors, 48); // For a normal cube
-    setupVertexArray(gl, programData.skyBoxVAO, programData.skyBoxVBO, global.unitBoxVertices, programData.skyBoxIBO, global.unitBoxIndices, [new AttributeDescription(0, 3, 0)], 12); // For the skybox
-    setupVertexArray(gl, programData.lightVAO, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, [new AttributeDescription(0,3,0)], 48);
+
+    for(let x = -15; x < 16; x++)
+    {
+        for(let z = -15; z < 16; z++)
+        {
+            programData.instances.push(x);
+            programData.instances.push(0);
+            programData.instances.push(z);
+        }
+    }
+
+    setupVertexArray(gl, programData.vertexArray, programData.vertexBuffer, global.vertices, programData.indexBuffer, global.indices, programData.instances, global.attributeDescriptors, 48); // For a normal cube
+    setupVertexArray(gl, programData.skyBoxVAO, programData.skyBoxVBO, global.unitBoxVertices, programData.skyBoxIBO, global.unitBoxIndices, null, [new AttributeDescription(0, 3, 0)], 12); // For the skybox
+    setupVertexArray(gl, programData.lightVAO, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, null, [new AttributeDescription(0,3,0)], 48);
 
     return [gl, programData];
 }
@@ -189,24 +199,42 @@ function initializeEventListener() {
 }
 
 
-function setupVertexArray(gl, vertexArray, vertexBuffer, vertices, indexBuffer, indices, attributeDescriptors, stride)
+function setupVertexArray(gl, vertexArray, vertexBuffer, vertices, indexBuffer, indices, instances, attributeDescriptors, stride)
 {
+    
     // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     gl.bindVertexArray(vertexArray);
-
+    
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
-
+    
     if (indexBuffer !== null)
     {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW);
     }
 
+    if (instances !== null)
+    {
+        let instanceBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(instances), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(4, 3, gl.FLOAT, gl.FALSE, 0, 0);
+        gl.vertexAttribDivisor(4, 1);
+        gl.enableVertexAttribArray(4);
+    }
+
     for(const attributeDescription of attributeDescriptors)
     {
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
         gl.vertexAttribPointer(attributeDescription.location, attributeDescription.size, gl.FLOAT, gl.FALSE, stride, attributeDescription.offset);
         gl.enableVertexAttribArray(attributeDescription.location);
+
+        if(attributeDescription.isInstanced)
+        {
+            gl.vertexAttribDivisor(attributeDescription.location, 1);
+        }
     }
 
     // Unbind everything to reset state machine
