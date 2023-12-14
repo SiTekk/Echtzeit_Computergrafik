@@ -5,10 +5,11 @@ uniform float u_time;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 uniform vec3 viewPos;
-uniform sampler2D ourTexture;
+// uniform sampler2D ourTexture;
+uniform samplerCube ourTexture;
 
 in vec3 outColor;
-in vec2 texCoord;
+in vec3 texCoord;
 in vec3 normal;
 in vec3 fragPos;
 
@@ -35,7 +36,7 @@ void main()
     specularIntensity = pow(max(specularIntensity, 0.0), 32.0);
     vec3 specular = (specularStrength * specularIntensity) * lightColor;
 
-    vec3 result = (ambient + diffuse + specular) * outColor;
+    vec3 result = (ambient + diffuse + specular);// * outColor;
     //fragColor = vec4(result, 1.0f);
     fragColor = texture(ourTexture, texCoord) * vec4(result, 1.0f);
 }

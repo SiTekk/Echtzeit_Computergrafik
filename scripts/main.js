@@ -34,10 +34,6 @@ async function main() {
     const lightViewLocation = gl.getUniformLocation(programData.lightShaderProgram, "view");
     const lightProjLocation = gl.getUniformLocation(programData.lightShaderProgram, "proj");
 
-    gl.activeTexture(gl.TEXTURE0 + 0);
-    gl.bindTexture(gl.TEXTURE_2D, programData.texture);
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
-
     function mainLoop(timeStamp) {
         global.deltaTime = timeStamp - start;
         start = timeStamp;
@@ -58,7 +54,7 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.useProgram(programData.shaderProgram);
-        gl.bindTexture(gl.TEXTURE_2D, programData.texture);
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.texture);
         gl.bindVertexArray(programData.vertexArray);
 
         gl.uniformMatrix4fv(viewLocation, gl.FALSE, global.ubo.view);
@@ -147,7 +143,7 @@ async function initialize() {
         skyBoxVAO: gl.createVertexArray(),
         skyBoxVBO: gl.createBuffer(),
         skyBoxIBO: gl.createBuffer(),
-        texture: await createTexture(gl, `${document.location.origin}/textures/ETSIs.jpg`),
+        texture: await createCubeMapTexture(gl, global.dirtBlockUrls),
         cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls),
         lightVAO: gl.createVertexArray(),
     };
@@ -156,9 +152,9 @@ async function initialize() {
     console.log(`Height: ${programData.height}`)
     console.log(`Aspect: ${programData.width / programData.height}`)
     
-    setupVertexArray(gl, programData.vertexArray, programData.vertexBuffer, global.vertices, programData.indexBuffer, global.indices, global.attributeDescriptors, 44); // For a normal cube
+    setupVertexArray(gl, programData.vertexArray, programData.vertexBuffer, global.vertices, programData.indexBuffer, global.indices, global.attributeDescriptors, 48); // For a normal cube
     setupVertexArray(gl, programData.skyBoxVAO, programData.skyBoxVBO, global.unitBoxVertices, programData.skyBoxIBO, global.unitBoxIndices, [new AttributeDescription(0, 3, 0)], 12); // For the skybox
-    setupVertexArray(gl, programData.lightVAO, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, [new AttributeDescription(0,3,0)], 44);
+    setupVertexArray(gl, programData.lightVAO, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, [new AttributeDescription(0,3,0)], 48);
 
     return [gl, programData];
 }

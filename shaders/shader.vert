@@ -4,14 +4,14 @@ precision highp float;
 layout (location = 0) in vec3 aVertexPosition;
 layout (location = 1) in vec3 aNormalPosition;
 layout (location = 2) in vec3 aColor;
-layout (location = 3) in vec2 aTexCoord;
+layout (location = 3) in vec3 aTexCoord;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
 
 out vec3 outColor;
-out vec2 texCoord;
+out vec3 texCoord;
 out vec3 normal;
 out vec3 fragPos;
 
