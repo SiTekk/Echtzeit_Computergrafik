@@ -7,6 +7,16 @@ export class AttributeDescription { // Class which contains the attribute descip
     }
 }
 
+export class GameObject
+{
+    constructor(vao, coordinates, texture)
+    {
+        this.vao = vao;
+        this.coordinates = coordinates;
+        this.texture = texture;
+    }
+}
+
 export const global =
 {
     vertices: // Holds the Values for a standard Cube
@@ -93,7 +103,7 @@ export const global =
     ],
     lightPosition:
     [
-        0, 10, 0
+        -1, 3, 1
     ],
     ubo: // Holds the matrices for the translations
     {
@@ -105,7 +115,7 @@ export const global =
     {
         angle: 0.0,
         axis: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
-        eye: glMatrix.vec3.fromValues(0.0, 10.0, 2.0),
+        eye: glMatrix.vec3.fromValues(0.0, 4.0, 2.0),
         center: glMatrix.vec3.fromValues(0.0, 0.0, -1.0),
         up: glMatrix.vec3.fromValues(0.0, 1.0, 0.0),
         fovy: 60.0,
@@ -130,5 +140,23 @@ export const global =
         "textures/blocks/dirt_bottom.png",
         "textures/blocks/dirt_side.png",
         "textures/blocks/dirt_side.png"
+    ],
+    treeBlockUrls:
+    [
+        "textures/blocks/tree_side.png",
+        "textures/blocks/tree_side.png",
+        "textures/blocks/tree_top_bottom.png",
+        "textures/blocks/tree_top_bottom.png",
+        "textures/blocks/tree_side.png",
+        "textures/blocks/tree_side.png"
+    ],
+    leaveBlockUrls:
+    [
+        "textures/blocks/leaves.png",
+        "textures/blocks/leaves.png",
+        "textures/blocks/leaves.png",
+        "textures/blocks/leaves.png",
+        "textures/blocks/leaves.png",
+        "textures/blocks/leaves.png"
     ]
 };

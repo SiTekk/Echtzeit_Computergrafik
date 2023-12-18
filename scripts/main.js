@@ -1,6 +1,6 @@
 import { createShaderProgram } from "./shaders.js";
 import { keyboardInput, mouseInput, toRadians } from "./input.js";
-import { AttributeDescription, global } from "./globalVariables.js";
+import { AttributeDescription, GameObject, global } from "./globalVariables.js";
 import { createCubeMapTexture, createTexture } from "./textures.js";
 
 main();
@@ -67,6 +67,13 @@ async function main() {
 
         // Draw Cubes
         gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, programData.instances.length);
+        
+        for(const gameObject of programData.tree)
+        {
+            gl.bindVertexArray(gameObject.vao);
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, gameObject.texture);
+            gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, gameObject.coordinates.length);
+        }
 
         // Draw light source
         gl.useProgram(programData.lightShaderProgram);
@@ -145,7 +152,29 @@ async function initialize() {
         texture: await createCubeMapTexture(gl, global.dirtBlockUrls),
         cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls),
         lightVAO: gl.createVertexArray(),
-        instances: []
+        instances: [],
+        tree:
+        [
+            new GameObject( gl.createVertexArray(),
+                [
+                    0,1,0,
+                    0,2,0,
+                    0,3,0,
+                    0,4,0
+                ], await createCubeMapTexture(gl, global.treeBlockUrls)),
+            new GameObject( gl.createVertexArray(),
+                [
+                    0,5,0,
+                    0,5,1,
+                    0,5,-1,
+                    1,5,0,
+                    1,5,1,
+                    1,5,-1,
+                    -1,5,0,
+                    -1,5,1,
+                    -1,5,-1
+                ], await createCubeMapTexture(gl, global.leaveBlockUrls))
+        ]
     };
 
     console.log(`Width: ${programData.width}`)
@@ -165,6 +194,11 @@ async function initialize() {
     setupVertexArray(gl, programData.vertexArray, programData.vertexBuffer, global.vertices, programData.indexBuffer, global.indices, programData.instances, global.attributeDescriptors, 48); // For a normal cube
     setupVertexArray(gl, programData.skyBoxVAO, programData.skyBoxVBO, global.unitBoxVertices, programData.skyBoxIBO, global.unitBoxIndices, null, [new AttributeDescription(0, 3, 0)], 12); // For the skybox
     setupVertexArray(gl, programData.lightVAO, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, null, [new AttributeDescription(0,3,0)], 48);
+
+    for(const gameObject of programData.tree)
+    {
+        setupVertexArray(gl, gameObject.vao, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, gameObject.coordinates, global.attributeDescriptors, 48);
+    }
 
     return [gl, programData];
 }
