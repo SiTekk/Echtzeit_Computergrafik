@@ -42,6 +42,8 @@ async function main() {
         // glMatrix.mat4.identity(global.ubo.model);
         // glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cameraValues.axis);
         
+        renderShadowDepthMap();
+
         glMatrix.mat4.identity(global.ubo.model);
         glMatrix.vec3.add(temp, global.cameraValues.center, global.cameraValues.eye);
         glMatrix.mat4.lookAt(global.ubo.view, global.cameraValues.eye, temp, global.cameraValues.up);
@@ -152,6 +154,8 @@ async function initialize() {
         texture: await createCubeMapTexture(gl, global.dirtBlockUrls),
         cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls),
         lightVAO: gl.createVertexArray(),
+        frameBuffer: gl.createFramebuffer(),
+        frameBufferTexture: gl.createTexture(),
         instances: [],
         tree:
         [
@@ -199,6 +203,26 @@ async function initialize() {
     {
         setupVertexArray(gl, gameObject.vao, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, gameObject.coordinates, global.attributeDescriptors, 48);
     }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
+
+    gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, programData.width, programData.height, 0, gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, programData.frameBufferTexture, 0);
+
+    gl.readBuffer(gl.NONE);
+    gl.drawBuffers([gl.NONE]);
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+    {
+        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     return [gl, programData];
 }
@@ -274,4 +298,58 @@ function setupVertexArray(gl, vertexArray, vertexBuffer, vertices, indexBuffer, 
     // Unbind everything to reset state machine
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindVertexArray(null);
+}
+
+function renderShadowDepthMap(programData)
+{
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
+
+    orthogonalMatrix = glMatrix.mat4.create();
+    lookatMatrix = glMatrix.mat4.create();
+    glMatrix.mat4.ortho(orthogonalMatrix, -10.0, 10.0, -10.0, 10.0, global.near, global.far);
+    glMatrix.mat4.lookAt(lookatMatrix, [-2.0, 4.0, -1.0], [0.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+
+    gl.clearDepth(1.0); // Clear everything
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
+    gl.useProgram(programData.shaderProgram);
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.texture);
+        gl.bindVertexArray(programData.vertexArray);
+
+        gl.uniformMatrix4fv(viewLocation, gl.FALSE, global.ubo.view);
+        gl.uniformMatrix4fv(projLocation, gl.FALSE, global.ubo.proj);
+
+        gl.uniform1f(timeUniformLocation, timeStamp / 1000);
+        gl.uniform3fv(lightColorLocation, [1.0, 1.0, 1.0]);
+        gl.uniform3fv(lightPosLocation, global.lightPosition);
+        gl.uniform3fv(viewPosLocation, global.cameraValues.eye);
+
+        // Draw Cubes
+        gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, programData.instances.length);
+        
+        for(const gameObject of programData.tree)
+        {
+            gl.bindVertexArray(gameObject.vao);
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, gameObject.texture);
+            gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, gameObject.coordinates.length);
+        }
+
+        // Draw light source
+        gl.useProgram(programData.lightShaderProgram);
+        gl.bindVertexArray(programData.lightVAO);
+
+        gl.uniformMatrix4fv(lightViewLocation, gl.FALSE, global.ubo.view);
+        gl.uniformMatrix4fv(lightProjLocation, gl.FALSE, global.ubo.proj);
+
+        glMatrix.mat4.identity(global.ubo.model);
+
+        global.lightPosition[0] = global.lightPosition[0] + Math.sin(toRadians(timeStamp * 0.02)) * 0.03;
+        global.lightPosition[2] = global.lightPosition[2] + Math.cos(toRadians(timeStamp * 0.02)) * 0.03;
+
+        glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.lightPosition);
+        glMatrix.mat4.scale(global.ubo.model, global.ubo.model, [0.2, 0.2, 0.2]);
+        gl.uniformMatrix4fv(lightModelLocation, gl.FALSE, global.ubo.model);
+        gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
+
+    gl.bindFramebuffer(GL_FRAMEBUFFER, null);
 }
