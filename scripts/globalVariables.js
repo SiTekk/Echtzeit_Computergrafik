@@ -103,23 +103,25 @@ export const global =
     ],
     lightPosition:
     [
-        -1, 3, 1
+        -100, 0, 10
     ],
     ubo: // Holds the matrices for the translations
     {
         model: glMatrix.mat4.create(),
         view: glMatrix.mat4.create(),
-        proj: glMatrix.mat4.create()
+        proj: glMatrix.mat4.create(),
+        lightProj: glMatrix.mat4.create(),
+        lightView: glMatrix.mat4.create()
     },
     cameraValues: // Holds the values for the camera
     {
         angle: 0.0,
         axis: glMatrix.vec3.fromValues(0.0, 0.0, 0.0),
         eye: glMatrix.vec3.fromValues(0.0, 4.0, 2.0),
-        center: glMatrix.vec3.fromValues(0.0, 0.0, -1.0),
+        center: glMatrix.vec3.fromValues(0.0, -1.0, -1.0),
         up: glMatrix.vec3.fromValues(0.0, 1.0, 0.0),
         fovy: 60.0,
-        near: 0.1,
+        near: 0.001,
         far: 1000.0
     },
     deltaTime: 0, //Variable that stores the elapsed time of two frames

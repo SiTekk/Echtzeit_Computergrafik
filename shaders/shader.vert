@@ -10,11 +10,14 @@ layout (location = 4) in vec3 aOffset;
 //uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
+uniform mat4 lightView;
+uniform mat4 lightProj;
 
 out vec3 outColor;
 out vec3 texCoord;
 out vec3 normal;
 out vec3 fragPos;
+out vec4 fragPosLightSpace;
 
 void main()
 {
@@ -24,9 +27,10 @@ void main()
         vec4(0.0, 0.0, 1.0, 0.0),
         vec4(aOffset, 1.0));
 
-    gl_Position = proj * view * model * vec4(aVertexPosition, 1.0f);
+    gl_Position = proj * view * model * vec4(aVertexPosition, 1.0);
     outColor = aColor;
     texCoord = aTexCoord;
     normal = mat3(transpose(inverse(model))) * aNormalPosition;
     fragPos = vec3(model * vec4(aVertexPosition, 1.0));
+    fragPosLightSpace = lightProj * lightView * model * vec4(aVertexPosition, 1.0);
 }
