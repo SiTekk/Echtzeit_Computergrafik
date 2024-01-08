@@ -21,6 +21,8 @@ async function main() {
     //const modelLocation = gl.getUniformLocation(programData.shaderProgram, "model");
     const viewLocation = gl.getUniformLocation(programData.shaderProgram, "view");
     const projLocation = gl.getUniformLocation(programData.shaderProgram, "proj");
+    const lightViewLocationMain = gl.getUniformLocation(programData.shaderProgram, "lightView");
+    const lightProjLocationMain = gl.getUniformLocation(programData.shaderProgram, "lightProj");
 
     const timeUniformLocation = gl.getUniformLocation(programData.shaderProgram, "u_time");
     const lightColorLocation = gl.getUniformLocation(programData.shaderProgram, "lightColor");
@@ -42,9 +44,12 @@ async function main() {
         // glMatrix.mat4.identity(global.ubo.model);
         // glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.cameraValues.axis);
         
+        renderShadowDepthMap(gl, programData);
+
         glMatrix.mat4.identity(global.ubo.model);
         glMatrix.vec3.add(temp, global.cameraValues.center, global.cameraValues.eye);
         glMatrix.mat4.lookAt(global.ubo.view, global.cameraValues.eye, temp, global.cameraValues.up);
+        //glMatrix.mat4.ortho(global.ubo.proj, -10, 10, -10, 10, 0.001, global.cameraValues.far);
         glMatrix.mat4.perspective(global.ubo.proj, toRadians(global.cameraValues.fovy), programData.width / programData.height, global.cameraValues.near, global.cameraValues.far);
 
         // Set clear color to black, fully opaque
@@ -54,11 +59,20 @@ async function main() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.useProgram(programData.shaderProgram);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1i(gl.getUniformLocation(programData.shaderProgram, "ourTexture"), 0);
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.texture);
+        gl.activeTexture(gl.TEXTURE0 + 1);
+        gl.uniform1i(gl.getUniformLocation(programData.shaderProgram, "shadowMap"), 1);
+        gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
+        
         gl.bindVertexArray(programData.vertexArray);
 
         gl.uniformMatrix4fv(viewLocation, gl.FALSE, global.ubo.view);
         gl.uniformMatrix4fv(projLocation, gl.FALSE, global.ubo.proj);
+        gl.uniformMatrix4fv(lightViewLocationMain, gl.FALSE, global.ubo.lightView);
+        gl.uniformMatrix4fv(lightProjLocationMain, gl.FALSE, global.ubo.lightProj);
 
         gl.uniform1f(timeUniformLocation, timeStamp / 1000);
         gl.uniform3fv(lightColorLocation, [1.0, 1.0, 1.0]);
@@ -71,6 +85,7 @@ async function main() {
         for(const gameObject of programData.tree)
         {
             gl.bindVertexArray(gameObject.vao);
+            gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_CUBE_MAP, gameObject.texture);
             gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, gameObject.coordinates.length);
         }
@@ -84,11 +99,18 @@ async function main() {
 
         glMatrix.mat4.identity(global.ubo.model);
 
-        global.lightPosition[0] = global.lightPosition[0] + Math.sin(toRadians(timeStamp * 0.02)) * 0.03;
-        global.lightPosition[2] = global.lightPosition[2] + Math.cos(toRadians(timeStamp * 0.02)) * 0.03;
+        console.log(`Delta Time: ${global.deltaTime}`);
+
+        global.lightPosition[0] = global.lightPosition[0] + global.deltaTime * 0.01;
+
+        if(global.lightPosition[0] > 100)
+        {
+            global.lightPosition[0] = -100;
+        }
+
+        global.lightPosition[1] = (-(0.1 * global.lightPosition[0] - 100) * (0.1 * global.lightPosition[0] + 100)) - 9900;
 
         glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.lightPosition);
-        glMatrix.mat4.scale(global.ubo.model, global.ubo.model, [0.2, 0.2, 0.2]);
         gl.uniformMatrix4fv(lightModelLocation, gl.FALSE, global.ubo.model);
         gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
 
@@ -96,6 +118,7 @@ async function main() {
         gl.disable(gl.CULL_FACE)
 
         gl.useProgram(programData.skyboxShaderProgram);
+        gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
         gl.bindVertexArray(programData.skyBoxVAO);
  
@@ -143,6 +166,7 @@ async function initialize() {
         shaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/shader.vert`, `${document.location.origin}/shaders/shader.frag`),
         skyboxShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/skyboxShader.vert`, `${document.location.origin}/shaders/skyboxShader.frag`),
         lightShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/lightShader.vert`, `${document.location.origin}/shaders/lightShader.frag`),
+        depthShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/depthShader.vert`, `${document.location.origin}/shaders/depthShader.frag`),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
         indexBuffer: gl.createBuffer(),
@@ -152,6 +176,8 @@ async function initialize() {
         texture: await createCubeMapTexture(gl, global.dirtBlockUrls),
         cubeMapTexture: await createCubeMapTexture(gl, global.skyBoxUrls),
         lightVAO: gl.createVertexArray(),
+        frameBuffer: gl.createFramebuffer(),
+        frameBufferTexture: gl.createTexture(),
         instances: [],
         tree:
         [
@@ -199,6 +225,29 @@ async function initialize() {
     {
         setupVertexArray(gl, gameObject.vao, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, gameObject.coordinates, global.attributeDescriptors, 48);
     }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
+
+    gl.activeTexture(gl.TEXTURE1)
+    gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32F, programData.width, programData.height, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, programData.frameBufferTexture, 0);
+    
+    gl.readBuffer(gl.NONE);
+    gl.drawBuffers([gl.NONE]);
+    
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+    {
+        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
+    }
+    
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     return [gl, programData];
 }
@@ -274,4 +323,41 @@ function setupVertexArray(gl, vertexArray, vertexBuffer, vertices, indexBuffer, 
     // Unbind everything to reset state machine
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     gl.bindVertexArray(null);
+}
+
+function renderShadowDepthMap(gl, programData)
+{
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
+
+    glMatrix.mat4.lookAt(global.ubo.lightView, global.lightPosition, [0.0, 3.0, 0.0], [0.0, 1.0, 0.0]);
+    glMatrix.mat4.ortho(global.ubo.lightProj, -25.0, 25.0, -25.0, 25.0, global.cameraValues.near, global.cameraValues.far);
+
+    const viewLocation = gl.getUniformLocation(programData.depthShaderProgram, "view");
+    const projLocation = gl.getUniformLocation(programData.depthShaderProgram, "proj");
+
+    gl.useProgram(programData.depthShaderProgram);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.texture);
+
+    gl.uniformMatrix4fv(viewLocation, gl.FALSE, global.ubo.lightView);
+    gl.uniformMatrix4fv(projLocation, gl.FALSE, global.ubo.lightProj);
+
+    gl.clearDepth(1.0); // Clear everything
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+
+    gl.bindVertexArray(programData.vertexArray);
+
+    // Draw Cubes
+    gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, programData.instances.length);
+
+    for(const gameObject of programData.tree)
+    {
+        gl.bindVertexArray(gameObject.vao);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, gameObject.texture);
+        gl.drawElementsInstanced(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0, gameObject.coordinates.length);
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }
