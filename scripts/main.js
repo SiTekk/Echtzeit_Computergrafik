@@ -112,21 +112,22 @@ async function main() {
         global.lightPosition[1] = (-(0.1 * global.lightPosition[0] - 100) * (0.1 * global.lightPosition[0] + 100)) - 9900;
 
         glMatrix.mat4.translate(global.ubo.model, global.ubo.model, global.lightPosition);
+        glMatrix.mat4.scale(global.ubo.model, global.ubo.model, [5.0, 5.0, 5.0]);
         gl.uniformMatrix4fv(lightModelLocation, gl.FALSE, global.ubo.model);
         gl.drawElements(gl.TRIANGLES, global.indices.length, gl.UNSIGNED_INT, 0);
 
         // Draw cubeMap last
         gl.disable(gl.CULL_FACE)
 
-        // gl.useProgram(programData.skyboxShaderProgram);
-        // gl.activeTexture(gl.TEXTURE0);
-        // gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
-        // gl.bindVertexArray(programData.skyBoxVAO);
+        gl.useProgram(programData.skyboxShaderProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
+        gl.bindVertexArray(programData.skyBoxVAO);
  
-        // gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
-        // gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
+        gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
+        gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
 
-        // gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
+        gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
         //gl.drawArrays(gl.TRIANGLES, 0, 36);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -172,6 +173,7 @@ async function initialize() {
         skyboxShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/skyboxShader.vert`, `${document.location.origin}/shaders/skyboxShader.frag`),
         lightShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/lightShader.vert`, `${document.location.origin}/shaders/lightShader.frag`),
         depthShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/depthShader.vert`, `${document.location.origin}/shaders/depthShader.frag`),
+        bloomShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/postProcessingShader.vert`, `${document.location.origin}/shaders/bloomShader.frag`),
         postProcessingShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/postProcessingShader.vert`, `${document.location.origin}/shaders/postProcessingShader.frag`),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
@@ -187,6 +189,9 @@ async function initialize() {
         frameBufferTexture: gl.createTexture(),
         postProcessingFrameBuffer: gl.createFramebuffer(),
         postProcessingFrameBufferTexture: gl.createTexture(),
+        postProcessingFrameBufferTextureBrightColor: gl.createTexture(),
+        bloomFrameBuffers: [gl.createFramebuffer(), gl.createFramebuffer()],
+        bloomTextures: [gl.createTexture(), gl.createTexture()],
         instances: [],
         tree:
         [
@@ -236,52 +241,7 @@ async function initialize() {
         setupVertexArray(gl, gameObject.vao, gl.createBuffer(), global.vertices, gl.createBuffer(), global.indices, gameObject.coordinates, global.attributeDescriptors, 48);
     }
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
-
-    gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32F, programData.width, programData.height, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, programData.frameBufferTexture, 0);
-    
-    gl.readBuffer(gl.NONE);
-    gl.drawBuffers([gl.NONE]);
-
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
-    {
-        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
-    }
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.postProcessingFrameBuffer);
-
-    gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, programData.width, programData.height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture, 0);
-
-    let rbo = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, programData.width, programData.height);
-
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, rbo);
-
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
-    {
-        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
-    }
-
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    setupFrameBuffers(gl, programData);
 
     return [gl, programData];
 }
@@ -315,6 +275,91 @@ function initializeEventListener() {
     });
 }
 
+function setupFrameBuffers(gl, programData)
+{
+    /*
+        Depth Frame Buffer
+    */
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.frameBuffer);
+
+    gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32F, programData.width, programData.height, 0, gl.DEPTH_COMPONENT, gl.FLOAT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, programData.frameBufferTexture, 0);
+    
+    gl.readBuffer(gl.NONE);
+    gl.drawBuffers([gl.NONE]);
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+    {
+        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
+    }
+
+    /*
+        Post Processing Frame Buffer
+    */
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.postProcessingFrameBuffer);
+
+    gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, programData.width, programData.height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture, 0);
+
+    gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTextureBrightColor);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, programData.width, programData.height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, programData.postProcessingFrameBufferTextureBrightColor, 0);
+
+    let rbo = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, programData.width, programData.height);
+
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, rbo);
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+    {
+        console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
+    }
+
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]); // Tell OpenGL to draw to both textures
+
+    /*
+        Bloom Frame Buffers
+    */
+    for(let i = 0; i < programData.bloomFrameBuffers.length; i++)
+    {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, programData.bloomFrameBuffers[i]);
+        gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[i]);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, programData.width, programData.height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, programData.bloomTextures[i], 0);
+
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE)
+        {
+            console.log("FrameBuffer Status:", gl.checkFramebufferStatus(gl.FRAMEBUFFER));
+        }
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
 
 function setupVertexArray(gl, vertexArray, vertexBuffer, vertices, indexBuffer, indices, instances, attributeDescriptors, stride)
 {
@@ -398,16 +443,52 @@ function renderShadowDepthMap(gl, programData)
 
 function postProcessing(gl, programData)
 {
-    gl.useProgram(programData.postProcessingShaderProgram);
+    gl.useProgram(programData.bloomShaderProgram);
 
     // Set clear color to black, fully opaque
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-
+    
     gl.bindVertexArray(programData.quadVAO);
     gl.disable(gl.DEPTH_TEST);
+
+    let horizontal = true;
+    let amount = 10;
+    
     gl.activeTexture(gl.TEXTURE0);
+
+    for(let i = 0; i < amount; i++)
+    {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, programData.bloomFrameBuffers[i % 2]);
+
+        if(i === 0)
+        {
+            gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTextureBrightColor);
+        }
+        else
+        {
+            gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[(i + 1) % 2]);
+        }
+
+        gl.uniform1f(gl.getUniformLocation(programData.bloomShaderProgram, "horizontal"), horizontal);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        horizontal = !horizontal;
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    gl.useProgram(programData.postProcessingShaderProgram);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(gl.getUniformLocation(programData.postProcessingShaderProgram, "uInputTexture"), 0);
     gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.uniform1i(gl.getUniformLocation(programData.postProcessingShaderProgram, "bloomTexture"), 1);
+    gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[(amount + 1) % 2]);
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
     gl.enable(gl.DEPTH_TEST);
 }
