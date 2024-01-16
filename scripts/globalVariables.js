@@ -101,6 +101,17 @@ export const global =
         [1.5, 0.2, 1.5],
         [-1.3, 1.0, 1.5]
     ],
+    quadVertices:
+    [
+        // positions // texCoords
+        -1.0,  1.0,  0.0, 1.0,
+        -1.0, -1.0,  0.0, 0.0,
+         1.0, -1.0,  1.0, 0.0,
+
+        -1.0,  1.0,  0.0, 1.0,
+         1.0, -1.0,  1.0, 0.0,
+         1.0,  1.0,  1.0, 1.0
+    ],
     lightPosition:
     [
         -100, 0, 10
@@ -127,12 +138,12 @@ export const global =
     deltaTime: 0, //Variable that stores the elapsed time of two frames
     skyBoxUrls: // Holds the URLs to the Skybox cube map elements
     [
-        "textures/skybox/right.jpg",
-        "textures/skybox/left.jpg",
-        "textures/skybox/top.jpg",
-        "textures/skybox/bottom.jpg",
-        "textures/skybox/front.jpg",
-        "textures/skybox/back.jpg"
+        "textures/skybox/Skybox_Right.avif",
+        "textures/skybox/Skybox_Left.avif",
+        "textures/skybox/Skybox_Top.avif",
+        "textures/skybox/Skybox_Bottom.avif",
+        "textures/skybox/Skybox_Front.avif",
+        "textures/skybox/Skybox_Back.avif"
     ],
     dirtBlockUrls:
     [
