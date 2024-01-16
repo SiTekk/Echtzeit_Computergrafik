@@ -118,15 +118,15 @@ async function main() {
         // Draw cubeMap last
         gl.disable(gl.CULL_FACE)
 
-        gl.useProgram(programData.skyboxShaderProgram);
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
-        gl.bindVertexArray(programData.skyBoxVAO);
+        // gl.useProgram(programData.skyboxShaderProgram);
+        // gl.activeTexture(gl.TEXTURE0);
+        // gl.bindTexture(gl.TEXTURE_CUBE_MAP, programData.cubeMapTexture);
+        // gl.bindVertexArray(programData.skyBoxVAO);
  
-        gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
-        gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
+        // gl.uniformMatrix4fv(skyboxViewLocation, gl.FALSE, global.ubo.view);
+        // gl.uniformMatrix4fv(skyboxProjLocation, gl.FALSE, global.ubo.proj);
 
-        gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
+        // gl.drawElements(gl.TRIANGLES, global.unitBoxIndices.length, gl.UNSIGNED_INT, 0);
         //gl.drawArrays(gl.TRIANGLES, 0, 36);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
