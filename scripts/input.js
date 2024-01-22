@@ -48,6 +48,21 @@ function keyboardInput(event, cameraValues) {
         glMatrix.vec3.scale(temp, temp, scale);
         glMatrix.vec3.add(cameraValues.eye, cameraValues.eye, temp);
     }
+    if (event.keyCode == 96) {
+        global.textureLevel = 0;
+    }
+    if (event.keyCode == 97) {
+        global.textureLevel = 1;
+    }
+    if (event.keyCode == 98) {
+        global.textureLevel = 2;
+    }
+    if (event.keyCode == 99) {
+        global.textureLevel = 3;
+    }
+    if (event.keyCode == 100) {
+        global.textureLevel = 4;
+    }
 }
 
 let yaw = 0.0;

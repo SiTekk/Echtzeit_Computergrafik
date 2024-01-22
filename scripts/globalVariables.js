@@ -171,5 +171,6 @@ export const global =
         "textures/blocks/leaves.png",
         "textures/blocks/leaves.png",
         "textures/blocks/leaves.png"
-    ]
+    ],
+    textureLevel: 4
 };
