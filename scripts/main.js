@@ -134,7 +134,46 @@ async function main() {
         
         postProcessing(gl, programData);
 
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        gl.useProgram(programData.finalShaderProgram);
+
+        gl.bindVertexArray(programData.quadVAO);
+        gl.disable(gl.DEPTH_TEST);
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.uniform1f(gl.getUniformLocation(programData.finalShaderProgram, "depth"), false);
+
+
+        switch(global.textureLevel)
+        {
+            case 0:
+                gl.bindTexture(gl.TEXTURE_2D, programData.frameBufferTexture);
+                gl.uniform1f(gl.getUniformLocation(programData.finalShaderProgram, "depth"), true);
+                break;
+            case 1:
+                gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture);
+                break;
+            case 2:
+                gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTextureBrightColor);
+                break;
+            case 3:
+                gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[1]);
+                break;
+            case 4:
+                gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[0]);
+                break;
+            default:
+                break;
+        }
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+
         gl.enable(gl.CULL_FACE);
+        gl.enable(gl.DEPTH_TEST);
 
         requestAnimationFrame(mainLoop);
     }
@@ -175,6 +214,7 @@ async function initialize() {
         depthShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/depthShader.vert`, `${document.location.origin}/shaders/depthShader.frag`),
         bloomShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/postProcessingShader.vert`, `${document.location.origin}/shaders/bloomShader.frag`),
         postProcessingShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/postProcessingShader.vert`, `${document.location.origin}/shaders/postProcessingShader.frag`),
+        finalShaderProgram: await createShaderProgram(gl, `${document.location.origin}/shaders/finalShader.vert`, `${document.location.origin}/shaders/finalShader.frag`),
         vertexArray: gl.createVertexArray(),
         vertexBuffer: gl.createBuffer(),
         indexBuffer: gl.createBuffer(),
@@ -477,16 +517,21 @@ function postProcessing(gl, programData)
         horizontal = !horizontal;
     }
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
     gl.useProgram(programData.postProcessingShaderProgram);
 
+    //gl.bindFramebuffer(gl.FRAMEBUFFER, programData.bloomFrameBuffers[amount % 2]);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, programData.bloomFrameBuffers[0]);
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    
     gl.activeTexture(gl.TEXTURE0);
     gl.uniform1i(gl.getUniformLocation(programData.postProcessingShaderProgram, "uInputTexture"), 0);
     gl.bindTexture(gl.TEXTURE_2D, programData.postProcessingFrameBufferTexture);
     gl.activeTexture(gl.TEXTURE1);
     gl.uniform1i(gl.getUniformLocation(programData.postProcessingShaderProgram, "bloomTexture"), 1);
-    gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[(amount + 1) % 2]);
+    //gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[(amount + 1) % 2]);
+    gl.bindTexture(gl.TEXTURE_2D, programData.bloomTextures[1]);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
